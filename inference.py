@@ -1,7 +1,9 @@
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
+from dataset import BraggNNDataset
 import torchao.quantization.pt2e
-from model import BraggNN
+
 
 def make_gaussian():
     X_test = np.zeros((11, 11))
@@ -14,6 +16,7 @@ def make_gaussian():
 
     X_test = (X_test - X_test.min()) / (X_test.max() - X_test.min())
     return torch.from_numpy(X_test[np.newaxis, np.newaxis].astype('float32'))
+
 
 def generate_dummy_input():
     psz = 11  # BRAGGNN_PATCH_SIZE
@@ -50,14 +53,37 @@ def main():
     #model = BraggNN(imgsz=11, fcsz=(16, 8, 4, 2))
     #mdl_fn = 'models/fc16_8_4_2-sz11.pth'
     #model.load_state_dict(torch.load(mdl_fn, map_location=torch.device('cpu')))
-    mdl_fn = 'models/int8_16_8_4_2-sz11-opset12.pth'
+    mdl_fn = 'models/int8_16_8_4_2-sz11.pth'
+    mdl_fn2 = 'models/int8_16_8_4_2-sz11-wo-nlb.pth'
     model = torch.export.load(mdl_fn).module()
+    model2 = torch.export.load(mdl_fn2).module()
 
-    input_tensor = make_gaussian()
-    #input_tensor = generate_dummy_input()
+    ds_input = BraggNNDataset(psz=11, rnd_shift=0, use='validation')
+    dl_input = DataLoader(dataset=ds_input, batch_size=512, shuffle=False, \
+                          num_workers=8, prefetch_factor=512, drop_last=False, pin_memory=True)
+
+    # input_tensor = make_gaussian()
+
+    preds, gts = [], []
+    preds2, gts2 = [], []
     with torch.no_grad():
-        pred = model.forward(input_tensor).cpu().numpy()
-        print(pred * 11)
+        for x, y in dl_input:
+            for i in range(x.shape[0]):
+                preds.append(model(x[i:i+1]).numpy())
+                preds2.append(model2(x[i:i+1]).numpy())
+            gts.append(y.numpy())
+            gts2.append(y.numpy())
+    pred = np.concatenate(preds)
+    pred2 = np.concatenate(preds2)
+    gt = np.concatenate(gts)
+    gt2 = np.concatenate(gts2)
+    err = np.abs(gt - pred) * 11
+    err2 = np.abs(gt2 - pred2) * 11
+    mae_x, mae_y = err.mean(axis=0)
+    mae_x2, mae_y2 = err2.mean(axis=0)
+    print('Original, samples: %d, MAE: (%.4f, %.4f)' % (len(err), mae_x, mae_y))
+    print('/wo NLB, samples: %d, MAE: (%.4f, %.4f)' % (len(err2), mae_x2, mae_y2))
+
 
 if __name__ == "__main__":
     main()

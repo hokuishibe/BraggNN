@@ -1,4 +1,4 @@
-from model import model_init, BraggNN
+from model_wo_nlb import model_init, BraggNN
 import torch, argparse, os, time, sys, shutil, logging
 from util import str2bool, str2tuple, s2ituple
 from torch.utils.data import DataLoader
