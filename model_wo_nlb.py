@@ -40,11 +40,12 @@ class NLB(torch.nn.Module):
 
 # SE
 class SE(torch.nn.Module):
-    def __init__(self, in_ch, r=4):
+    def __init__(self, in_ch, r=4, relu_a=0.01):
         super().__init__()
         self.pool = torch.nn.AdaptiveAvgPool2d(1)
         self.fc = torch.nn.Sequential(
-            torch.nn.Conv2d(in_ch, in_ch // r, 1), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_ch, in_ch // r, 1), torch.nn.LeakyReLU(relu_a),
+            # torch.nn.Conv2d(in_ch, in_ch // r, 1), torch.nn.ReLU(),
             torch.nn.Conv2d(in_ch // r, in_ch, 1), torch.nn.Sigmoid(),
         )
 
@@ -57,7 +58,8 @@ class ResConv(torch.nn.Module):
     def __init__(self, in_ch):
         super().__init__()
         self.body = torch.nn.Sequential(
-            torch.nn.Conv2d(in_ch, in_ch, 3, padding=1), torch.nn.ReLU(),
+            torch.nn.Conv2d(in_ch, in_ch, 3, padding=1), torch.nn.LeakyReLU(0.01),
+            # torch.nn.Conv2d(in_ch, in_ch, 3, padding=1), torch.nn.ReLU(),
             torch.nn.Conv2d(in_ch, in_ch, 3, padding=1),
         )
 
@@ -76,8 +78,8 @@ class BraggNN(torch.nn.Module):
             self.cnn_ops += [
                             torch.nn.Conv2d(in_channels=ic, out_channels=oc, kernel_size=3, \
                                 stride=1, padding=0),
-                            #torch.nn.LeakyReLU(negative_slope=0.01),
-                            torch.nn.ReLU(),
+                            torch.nn.LeakyReLU(negative_slope=0.01),
+                            #torch.nn.ReLU(),
             ]
             fsz -= 2
         self.nlb = NLB(in_ch=cnn_out_chs[0])
@@ -88,8 +90,8 @@ class BraggNN(torch.nn.Module):
         for ic, oc in zip(dense_in_chs, fcsz):
             self.dense_ops += [
                             torch.nn.Linear(ic, oc),
-                            #torch.nn.LeakyReLU(negative_slope=0.01),
-                            torch.nn.ReLU(),
+                            torch.nn.LeakyReLU(negative_slope=0.01),
+                            #torch.nn.ReLU(),
             ]
         # output layer
         self.dense_ops += [torch.nn.Linear(fcsz[-1], 2), ]

@@ -54,7 +54,7 @@ def main():
     #mdl_fn = 'models/fc16_8_4_2-sz11.pth'
     #model.load_state_dict(torch.load(mdl_fn, map_location=torch.device('cpu')))
     mdl_fn = 'models/int8_16_8_4_2-sz11.pth'
-    mdl_fn2 = 'models/int8_16_8_4_2-sz11-wo-nlb.pth'
+    mdl_fn2 = 'models/int8_16_8_4_2-sz11-se.pth'
     model = torch.export.load(mdl_fn).module()
     model2 = torch.export.load(mdl_fn2).module()
 

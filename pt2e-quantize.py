@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from model import BraggNN
+from model_wo_nlb import BraggNN
 from torch.utils.data import DataLoader
 from dataset import BraggNNDataset
 
@@ -32,7 +32,8 @@ def main():
     #dl_input = DataLoader(dataset=ds_input, batch_size=512, shuffle=False, \
     #                      num_workers=8, drop_last=False, pin_memory=True)
     fp32_model = BraggNN(imgsz=11, fcsz=(16, 8, 4, 2)).eval()
-    fp32_model.load_state_dict(torch.load('models/fc16_8_4_2-sz11.pth', map_location=torch.device('cpu')))
+    #fp32_model.load_state_dict(torch.load('models/fc16_8_4_2-sz11.pth', map_location=torch.device('cpu')))
+    fp32_model.load_state_dict(torch.load('se-itrOut/mdl-it00137.pth', map_location=torch.device('cpu')))
 
     example_inputs = (torch.randn(1, 1, 11, 11),)
     exported_model = torch.export.export(fp32_model, example_inputs).module()
@@ -58,7 +59,7 @@ def main():
     example_inputs = (torch.from_numpy(make_gaussian()).unsqueeze(0).unsqueeze(0),)
     print("example_inputs: ", example_inputs)
     quantized_ep = torch.export.export(quantized_model, example_inputs)
-    torch.export.save(quantized_ep, "models/int8_16_8_4_2-sz11-opset12.pth")
+    torch.export.save(quantized_ep, "models/int8_16_8_4_2-sz11-se.pth")
 
 if __name__ == "__main__":
     main()

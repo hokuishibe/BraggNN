@@ -27,13 +27,13 @@ def main():
     #onnx_program.save("onnx/braggnn.onnx")
 
     # int8
-    int8_module = torch.export.load('models/int8_16_8_4_2-sz11.pth').module()
+    int8_module = torch.export.load('models/int8_16_8_4_2-sz11-se.pth').module()
     # For torch==1.6.0
     #int8_module = torch.load(
     #    'models/int8_16_8_4_2-sz11.pth',
     #    map_location=torch.device('cpu'),
     #).eval()
-    int8_output_path = "onnx/braggnn_int8_pt2e.onnx"
+    int8_output_path = "onnx/braggnn_int8_pt2e_se.onnx"
 
     torch.onnx.export(
         int8_module,
